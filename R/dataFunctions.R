@@ -365,6 +365,16 @@ get_wikipedia_summary <- function(taxon) {
   return(jsonlite::fromJSON(URL)$query$pages[[1]]$extract)
 }
 
+#' Get Wikipedia images
+#'
+#' @param taxon 
+#' @return images from Wikipedia
+#' @export
+get_wikipedia_pics <- function(taxon) {
+  URL <- paste0('https://en.wikipedia.org/api/rest_v1/page/media-list/', utils::URLencode(taxon))
+  image_URL <- (jsonlite::fromJSON(URL)$items$srcset)[[1]]$src[1]
+  return(gsub('//', 'http://', image_URL))
+}
 
 #' Get info from Encyclopedia of Life
 #'
