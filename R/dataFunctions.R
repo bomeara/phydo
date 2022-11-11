@@ -88,6 +88,53 @@ locality_clean <- function(locations) {
   return(CoordinateCleaner::clean_coordinates(locations, lon="longitude", lat="latitude", species=NULL, tests=c( "centroids", "equal", "gbif", "institutions","zeros"), value="clean"))
 }
 
+#' Plot a map of points
+#' @param gbif_points Data.frame containing points (latitude and longitude, perhaps other data as columns)
+#' @return A ggplot2 map
+#' 
+#' Note that we will need to set zoom automatically, also add points, also make the ocean full of water.
+#' @examples
+#' gis_points <- spocc_taxon_query("Tyto", limit=100, sources="gbif")
+#' plot_gis(gbif_points)
+#' @export
+plot_gis <- function(gbif_points) {
+	min_lat <- min(gbif_points$latitude)
+	max_lat <- max(gbif_points$latitude)
+	min_lon <- min(gbif_points$longitude)
+	max_lon <- max(gbif_points$longitude)
+	
+	med_bbox <- sf::st_bbox(c(xmin = min_lon, xmax = max_lon, ymin = min_lat, ymax = max_lat),
+						crs = 4326)
+
+	med_bbox_df <- data.frame(x = c(min_lon, max_lon),
+							y = c(min_lat, max_lat))
+
+
+	extent_zoomed <- raster::extent(med_bbox)
+	prj_dd <- "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"
+
+	elev_med <- elevatr::get_elev_raster(med_bbox_df, prj =  prj_dd, z = 3, clip = "bbox")
+	elev_med_mat <- rayshader::raster_to_matrix(elev_med)
+
+	base_map <- elev_med_mat %>% 
+	height_shade() %>% 
+	add_overlay(
+		sphere_shade(elev_med_mat,
+					texture = rayshader::create_texture(
+					lightcolor = "#b8ff78",
+					shadowcolor = "#193600",
+					leftcolor = "#80d453",
+					rightcolor = "#80d453",
+					centercolor = "#568a27"),
+					sunangle = 0,
+					colorintensity = 5)
+	)
+
+	base_map %>% plot_map()
+	return(base_map)
+}
+
+
 #' Use azizka/speciesgeocodeR/ and WWF data to encode locations for habitat and biome
 #'
 #' Uses info from http://omap.africanmarineatlas.org/BIOSPHERE/data/note_areas_sp/Ecoregions_Ecosystems/WWF_Ecoregions/WWFecoregions.htm to convert codes to more readable text
@@ -352,6 +399,7 @@ get_datelife_biggest <- function(taxon) {
   clade.name<- rotl::tnrs_match_names(taxon)$unique_name[1]
   datelife_biggest <- NULL
   try(datelife_biggest <- datelife::datelife_search(input=clade.name, get_spp_from_taxon=TRUE, summary_format="phylo_biggest"))
+  
   return(datelife_biggest)
 }
 

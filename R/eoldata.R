@@ -56,9 +56,9 @@ eol_data <- function(species) {
 #'
 #' @param eol_df A data frame produced by the function eol_data
 #' @return A data frame of one row with columns: behavior circadian rhythm, developmental mode, visual system, and wing morphology
-#' @export
 #' 
 #' This works for a single species but not for the multi-species data frame produced by get_eol
+#' @export
 eol_traits <- function(eol_df){
   df2 <- subset(eol_df, select = c(species, trait, value))
   #remove duplicate rows
@@ -75,9 +75,8 @@ eol_traits <- function(eol_df){
 #'
 #' @param eol_df A data frame produced by the function eol_data
 #' @return A data frame of one row with columns: behavior circadian rhythm, developmental mode, visual system, and wing morphology
-#' @export
 #'
-#' This one works for the full data frame produced by get_eol - maybe rework it with pipes? 
+#' @export
 eol_traits2 <- function(eol_df){
 	#select the columns we want
 	df2 <- subset(eol_df, select = c(species, trait, value))

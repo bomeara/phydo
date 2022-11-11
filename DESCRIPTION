@@ -17,22 +17,27 @@ Depends:
 Imports:
     CoordinateCleaner,
     datelife,
+	elevatr,
     geiger,
     jsonlite,
 	magrittr,
     paleotree,
     phangorn,
     plyr,
+	raster,
+	rayshader,
     rentrez,
     rfishbase,
     rgbif,
     rmarkdown,
     rotl,
 	rvest,
+	sf,
     sp,
     speciesgeocodeR,
     spocc,
     taxize,
+	tidyverse,
     utils
 Suggests:
     testthat (>= 2.1.0)
@@ -41,4 +46,4 @@ Remotes:
     phylotastic/datelife
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 7.1.2
+RoxygenNote: 7.2.1
