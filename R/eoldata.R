@@ -4,7 +4,6 @@
 #' @return A data frame of trait category, value, source, and definitions
 #' @export
  
- 
  #https://eol.org/api/search/1.0.json?q=Camelis%20dromedarius&exact=1&page=1
  #https://eol.org/api/search/1.0.json?q=Camelus%20dromedarius&exact=1&page=1
 eol_data <- function(species) {
