@@ -1,6 +1,6 @@
 library(rgbif)
 library(plyr)
-
+library(png)
 
 #' Query gbif to return latitude and longitude for members of a clade of interest
 #'
@@ -360,11 +360,13 @@ get_datelife_biggest <- function(taxon) {
 #' @param taxon Clade of interest
 #' @return text string of summary of page
 #' @export
-get_wikipedia_summary <- function(taxon) {
-  URL <- paste0('https://en.wikipedia.org/w/api.php?format=json&action=query&prop=extracts&exintro&explaintext&redirects=1&titles=', utils::URLencode(taxon))
-  return(jsonlite::fromJSON(URL)$query$pages[[1]]$extract)
-}
 
+
+#' Get Wikipedia images
+#'
+#' @param taxon 
+#' @return images from Wikipedia
+#' @export
 #' Get Wikipedia images
 #'
 #' @param taxon 
@@ -375,6 +377,58 @@ get_wikipedia_pics <- function(taxon) {
   image_URL <- (jsonlite::fromJSON(URL)$items$srcset)[[1]]$src[1]
   return(gsub('//', 'http://', image_URL))
 }
+
+
+#' Get Wikipedia images
+#'
+#' @param taxon 
+#' @return images from Wikipedia
+#' @export
+#' combine pics and summary
+#'
+#' @param taxon The clad to investigate
+#' @return data.frame with species name, trait category, trait value, and other information
+#' @export
+#' @examples
+#' 
+
+get_combie_image_summary <- function(taxon){
+
+  w1<-get_wikipedia_summary(taxon)
+    
+  #get the text from the body
+  html <- htmlTreeParse(w1, useInternal = TRUE)
+  txt <- xpathApply(html, "//body//text()[not(ancestor::script)][not(ancestor::style)][not(ancestor::noscript)]", xmlValue)
+  txt<-toString(txt)
+  
+  ww1 <-get_wikipedia_pics(taxon)
+  
+  wikiimage <- image_read_svg(ww1, width = 350)
+
+  #read file
+  img<-readJPG("wikiimage")
+  
+  #get size
+  h<-dim(img)[1]
+  w<-dim(img)[2]
+  
+  #open new file for output
+  jpg("out.jpg", width=w, height=h)
+  par(mar=c(0,0,0,0), xpd=NA, mgp=c(0,0,0), oma=c(0,0,0,0), ann=F)
+  plot.new()
+  plot.window(0:1, 0:1)
+  
+  #fill plot with image
+  usr<-par("usr")    
+  rasterImage(img, usr[1], usr[3], usr[2], usr[4])
+  
+  #close image
+  dev.off()
+    
+ return(total)
+}
+
+
 
 #' Get info from Encyclopedia of Life
 #'
