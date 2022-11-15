@@ -408,7 +408,13 @@ get_datelife_biggest <- function(taxon) {
 #' @param taxon Clade of interest
 #' @return text string of summary of page
 #' @export
-
+#' @param taxon Clade of interest
+#' @return text string of summary of page
+#' @export
+get_wikipedia_summary <- function(taxon) {
+  URL <- paste0('https://en.wikipedia.org/w/api.php?format=json&action=query&prop=extracts&exintro&explaintext&redirects=1&titles=', utils::URLencode(taxon))
+  return(jsonlite::fromJSON(URL)$query$pages[[1]]$extract)
+}
 
 #' Get Wikipedia images
 #'
