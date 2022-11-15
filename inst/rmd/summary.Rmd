@@ -63,7 +63,7 @@ if(nrow(pubmed.df)>0) {
 
 Here is information about realms (biogeographic regions) by species; frequency of record in each realm.
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, eval=FALSE}
 realm <- all_results$location_realm_biome$realm
 for (i in sequence(nrow(realm))) {
   realm[i,] <- realm[i,]/sum(realm[i,], na.rm=TRUE)
@@ -75,7 +75,7 @@ pander::pander(data.frame(realm))
 
 Here is information about biomes by species; frequency of records in each biome.
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, eval=FALSE}
 biome <- all_results$location_realm_biome$biome
 for (i in sequence(nrow(biome))) {
   biome[i,] <- biome[i,]/sum(biome[i,], na.rm=TRUE)

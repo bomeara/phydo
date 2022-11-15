@@ -8,6 +8,8 @@ get_location_realm_biome(taxon, limit = 10000)
 }
 \arguments{
 \item{taxon}{Clade of interest}
+
+\item{limit}{Maximum number of points per species per source}
 }
 \value{
 list containing a data.frame of species and locations, a table of realms (biogeographic regions), and a table of biomes
