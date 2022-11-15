@@ -5,6 +5,7 @@
 #' @export
 run_chapter2 <- function(taxon) {
   wikipedia_summary <- get_wikipedia_summary(taxon)
+  wikipedia_pics <- get_wikipedia_pics(taxon)
   datelife_biggest <- get_datelife_biggest(taxon)
   pubmed <- get_pubmed(taxon)
   genbank_count_by_gene <- get_genbank_count_by_gene(taxon)
