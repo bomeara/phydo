@@ -408,19 +408,11 @@ get_datelife_biggest <- function(taxon) {
 #' @param taxon Clade of interest
 #' @return text string of summary of page
 #' @export
-#' @param taxon Clade of interest
-#' @return text string of summary of page
-#' @export
 get_wikipedia_summary <- function(taxon) {
   URL <- paste0('https://en.wikipedia.org/w/api.php?format=json&action=query&prop=extracts&exintro&explaintext&redirects=1&titles=', utils::URLencode(taxon))
   return(jsonlite::fromJSON(URL)$query$pages[[1]]$extract)
 }
 
-#' Get Wikipedia images
-#'
-#' @param taxon 
-#' @return images from Wikipedia
-#' @export
 #' Get Wikipedia images
 #'
 #' @param taxon 
@@ -438,26 +430,18 @@ get_wikipedia_pics <- function(taxon) {
 #' @param taxon 
 #' @return images from Wikipedia
 #' @export
-#' combine pics and summary
-#'
-#' @param taxon The clad to investigate
-#' @return data.frame with species name, trait category, trait value, and other information
-#' @export
-#' @examples
-#' 
-
 get_combie_image_summary <- function(taxon){
 
   w1<-get_wikipedia_summary(taxon)
     
   #get the text from the body
-  html <- htmlTreeParse(w1, useInternal = TRUE)
-  txt <- xpathApply(html, "//body//text()[not(ancestor::script)][not(ancestor::style)][not(ancestor::noscript)]", xmlValue)
-  txt<-toString(txt)
+#   html <- XML::htmlTreeParse(w1, useInternal = TRUE)
+#   txt <- XML::xpathApply(html, "//body//text()[not(ancestor::script)][not(ancestor::style)][not(ancestor::noscript)]", xmlValue)
+#   txt<-toString(txt)
   
   ww1 <-get_wikipedia_pics(taxon)
   
-  wikiimage <- image_read_svg(ww1, width = 350)
+  wikiimage <- magick::image_read_svg(ww1, width = 350)
 
   #read file
   img<-readJPG("wikiimage")

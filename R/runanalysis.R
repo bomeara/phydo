@@ -13,9 +13,9 @@ run_chapter2 <- function(taxon) {
   otol <- get_otol(taxon)
   eol <- get_eol(taxon)
   #eol_tbl <- eol_traits2(eol)
-#  location_realm_biome <- get_location_realm_biome(taxon)
+  location_realm_biome <- get_location_realm_biome(taxon)
   #return(list(wikipedia_summary=wikipedia_summary, datelife_biggest=datelife_biggest, pubmed=pubmed, genbank_count_by_gene=genbank_count_by_gene, genbank_count=genbank_count , otol=otol, location_realm_biome=location_realm_biome, eol=eol, eol_tbl=eol_tbl))
-  return(list(wikipedia_summary=wikipedia_summary, datelife_biggest=datelife_biggest, pubmed=pubmed, genbank_count_by_gene=genbank_count_by_gene, genbank_count=genbank_count , otol=otol, eol=eol))
+  return(list(wikipedia_summary=wikipedia_summary, wikipedia_pics=wikipedia_pics, datelife_biggest=datelife_biggest, genbank_count_by_gene=genbank_count_by_gene, genbank_count=genbank_count, otol=otol, eol=eol))
 
 }
 
@@ -30,6 +30,25 @@ run_chapter2 <- function(taxon) {
 #' render_chapter2("Tyto")
 render_chapter2 <- function(taxon, format="pdf", output_dir=getwd()) {
   rmarkdown::render(system.file("rmd", "summary.Rmd", package="chapter2"), params=list(taxon=taxon),output_file=paste0("Report_",gsub(" ", "_",taxon), ".", format), output_dir=output_dir, encoding="UTF-8")
+}
+
+
+#' Create a file of results
+#'
+#' @param chapter2_result The result of run_chapter2
+#' @param taxon Clade of interest
+#' @return Nothing, though a file is created in the current working directory
+#' @export
+render_quarto <- function(chapter2_result, taxon) {
+  #quarto::quarto_render(system.file( "summary.qmd", package="chapter2"), 
+  quarto::quarto_render("test.qmd", 
+
+	output_file=paste0("Report_",gsub(" ", "_",taxon), ".html"),
+	execute_dir = tempdir(),
+  	execute_params = list(
+        taxon = taxon,
+        all_results = jsonlite::serializeJSON(chapter2_result)
+    ))
 }
 
 #' Run biogeobears analyses
