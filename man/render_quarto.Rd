@@ -4,10 +4,10 @@
 \alias{render_quarto}
 \title{Create a file of results}
 \usage{
-render_quarto(chapter2_result, taxon)
+render_quarto(phydo_result, taxon)
 }
 \arguments{
-\item{chapter2_result}{The result of run_chapter2}
+\item{phydo_result}{The result of run_phydo}
 
 \item{taxon}{Clade of interest}
 }

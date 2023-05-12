@@ -27,7 +27,7 @@ ape::Ntip(tree_secondary)
 ape::Nnode(tree_secondary)
 
 
-source("~//chapter2//R//merging_trees_with_MRP.R")
+source("~//phydo//R//merging_trees_with_MRP.R")
 mergedTree <- merging_trees_with_MRP(
 	tree_backbone, tree_secondary, 
 	reduce_collapse = TRUE,
@@ -36,7 +36,7 @@ mergedTree <- merging_trees_with_MRP(
 mergedTree
 
 
-pdf_path <- paste0("~//chapter2//analysis/",
+pdf_path <- paste0("~//phydo//analysis/",
 		"merged_Fagales_tree_",
 		format(Sys.time(), "%m-%d-%y"),
 		".pdf")
@@ -53,7 +53,7 @@ shell.exec(path.expand(pdf_path))
 
 # fan
 
-pdf_path <- paste0("~//chapter2//analysis/",
+pdf_path <- paste0("~//phydo//analysis/",
 		"merged_Fagales_tree_fan_",
 		format(Sys.time(), "%m-%d-%y"),
 		".pdf")

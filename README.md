@@ -1,8 +1,8 @@
 <!-- badges: start -->
-[![Travis build status](https://travis-ci.org/bomeara/chapter2.svg?branch=master)](https://travis-ci.org/bomeara/chapter2)
+[![Travis build status](https://travis-ci.org/bomeara/phydo.svg?branch=master)](https://travis-ci.org/bomeara/phydo)
 <!-- badges: end -->
 
-# chapter2
+# phydo
 Project to quickly provide an overview of a clade, as a starting point for human-driven analysis.
 
 This is inspired by projects such as Rod Page's iSpecies or the Sanderson et al.'s phylota, as well as by the issues we frequently see in students first learning about phylogenetics.

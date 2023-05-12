@@ -14,7 +14,7 @@ match_data(tree, data, warnings = FALSE)
 \item{warnings}{Complain about mismatches if TRUE.}
 }
 \value{
-The function returns a list of two elements (phy and data) that are manipulated to include only those species found in both the tree and data supplied by the user. The class of the returned object is "chapter2".
+The function returns a list of two elements (phy and data) that are manipulated to include only those species found in both the tree and data supplied by the user. The class of the returned object is "phydo".
 }
 \description{
 Get a tree and data, resolve to same set of taxa, and make a shared object

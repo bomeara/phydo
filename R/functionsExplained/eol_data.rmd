@@ -5,17 +5,17 @@ date: '2022-06-27'
 output: html_document
 ---
 ### Encycopedia of Life Web Scrape
-# A step by step walkthrough of the `eol_data` function in `bomeara/chapter2`  
+# A step by step walkthrough of the `eol_data` function in `bomeara/phydo`  
 To install the repo:
 ```{r}
 #install the devtools package (if not already installed)
 install.packages("devtools")
 #go to the library and get the devtools package
 library(devtools)
-#install chapter2
-devtools::install_github("bomeara/chapter2")
-#go to the library and get chapter2
-library(chapter2)
+#install phydo
+devtools::install_github("bomeara/phydo")
+#go to the library and get phydo
+library(phydo)
 ```
   
 To run the `eol_data` function:

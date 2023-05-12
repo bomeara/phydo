@@ -1,4 +1,4 @@
 library(testthat)
-library(chapter2)
+library(phydo)
 
-test_check("chapter2")
+test_check("phydo")

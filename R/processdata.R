@@ -14,7 +14,7 @@ convert_continuous_to_discrete <- function(latlon) {
 #' @param tree a phylo object
 #' @param data A data.frame. Rownames are species names.
 #' @param warnings Complain about mismatches if TRUE.
-#' @return The function returns a list of two elements (phy and data) that are manipulated to include only those species found in both the tree and data supplied by the user. The class of the returned object is "chapter2".
+#' @return The function returns a list of two elements (phy and data) that are manipulated to include only those species found in both the tree and data supplied by the user. The class of the returned object is "phydo".
 #' @export
 match_data <- function(tree, data, warnings = FALSE) {
   dm = length(dim(data))
@@ -61,20 +61,20 @@ match_data <- function(tree, data, warnings = FALSE) {
     data <- as.data.frame(data, stringsAsFactors=FALSE)
   }
   MatchReturn<-list(phy = tree, data = data)
-  class(MatchReturn)<-c("list","chapter2")
+  class(MatchReturn)<-c("list","phydo")
   return(MatchReturn)
 }
 
 
-#' Convert the chapter2 format to one usable for Beaulieu-style
+#' Convert the phydo format to one usable for Beaulieu-style
 #'
-#' Many of the packages authored by Jeremy Beaulieu with collaborators have the first column used to hold taxon names rather than store them as row names. Bless his heart. This converts a chapter2 object, which has its data with taxon names as row names, into having a data object internally with a column for taxon names.
+#' Many of the packages authored by Jeremy Beaulieu with collaborators have the first column used to hold taxon names rather than store them as row names. Bless his heart. This converts a phydo object, which has its data with taxon names as row names, into having a data object internally with a column for taxon names.
 #'
-#' @param chapter2 The chapter2 object
+#' @param phydo The phydo object
 #' @export
 #' @return a list of two objects, phy and data, with the data in the format preferred by Beaulieu
-chapter2_convert_to_Beaulieu_data <- function(chapter2) {
-  return(list(phy=chapter2$phy, data=cbind.data.frame(taxa=rownames(match_data$data), chapter2$data[,1:ncol(chapter2$data)])))
+phydo_convert_to_Beaulieu_data <- function(phydo) {
+  return(list(phy=phydo$phy, data=cbind.data.frame(taxa=rownames(match_data$data), phydo$data[,1:ncol(phydo$data)])))
 }
 
 #' Check a vector to see if the elements are numeric
@@ -107,31 +107,31 @@ check_continuous <- function(x) {
   return(continuous)
 }
 
-#' Return a chapter2 object with only the selected kind of traits
+#' Return a phydo object with only the selected kind of traits
 #'
-#' @param chapter2 a chapter2 class object, with tree and data
+#' @param phydo a phydo class object, with tree and data
 #' @param keep Whether you want to keep continuous or discrete data
-#' @return A chapter2 object with the tree and only the chosen kind of data
+#' @return A phydo object with the tree and only the chosen kind of data
 #' @export
-chapter2_drop_type <- function(chapter2, keep=c("continuous", "discrete")) {
+phydo_drop_type <- function(phydo, keep=c("continuous", "discrete")) {
   keep_continuous <- TRUE
   if(keep=="discrete") {
     keep_continuous <- FALSE
   }
 
-  column_check <- check_continuous(chapter2$data)
+  column_check <- check_continuous(phydo$data)
   if(!keep_continuous) {
     column_check <- !column_check
   }
-  chapter2$data  <- chapter2$data[, column_check, drop=FALSE]
-  return(chapter2)
+  phydo$data  <- phydo$data[, column_check, drop=FALSE]
+  return(phydo)
 }
 
 #' Try geiger's fitContinuous or fitDiscrete on all the continuous datasets using all geiger models
 #'
 #' Note that this ignores SE at the moment. If a character is missing information for a taxon, that taxon is deleted for just that character only.
 #'
-#' @param chapter2 a chapter2 class object, with tree and data
+#' @param phydo a phydo class object, with tree and data
 #' @param models which models to use. If NULL, uses all available
 #' @param keep continuous or discrete data
 #' @param ncores how many cores to use; if NULL, detects automatically
@@ -139,23 +139,23 @@ chapter2_drop_type <- function(chapter2, keep=c("continuous", "discrete")) {
 #' @export
 #' @examples
 #' data(geospiza,package="geiger")
-#' chapter2 <- match_data(geospiza$phy, geospiza$dat)
-#' results <- chapter2_fitContinuous(chapter2)
+#' phydo <- match_data(geospiza$phy, geospiza$dat)
+#' results <- phydo_fitContinuous(phydo)
 #' # Look at model for OU for character 1
 #' print(results[["OU"]][["wingL"]])
-chapter2_fitGeiger <- function(chapter2, models=NULL, keep=c("continuous", "discrete"), ncores=NULL){
+phydo_fitGeiger <- function(phydo, models=NULL, keep=c("continuous", "discrete"), ncores=NULL){
 
   if(keep=="continuous") {
     if(is.null(models)) {
       models=c("BM","OU","EB","trend","lambda","kappa","delta","drift","white")
     }
-    geiger_dat <- chapter2_drop_type(chapter2, keep="continuous")
+    geiger_dat <- phydo_drop_type(phydo, keep="continuous")
     fitGeiger <- geiger::fitContinuous
   } else {
     if(is.null(models)) {
       models=c("ER","SYM","ARD","meristic")
     }
-    geiger_dat <- chapter2_drop_type(chapter2, keep="discrete")
+    geiger_dat <- phydo_drop_type(phydo, keep="discrete")
     fitGeiger <- geiger::fitDiscrete
   }
 
@@ -179,14 +179,14 @@ chapter2_fitGeiger <- function(chapter2, models=NULL, keep=c("continuous", "disc
 #
 # #' Try geiger's fitContinuous on their discrete datasets using all geiger models
 # #'
-# #' @param chapter2 a chapter2 class object, with tree and datasets
+# #' @param phydo a phydo class object, with tree and datasets
 # #' @param models which models to used
 # #' @param ncores how many cores to use; if NULL, detects automatically
 # #' @return A two dimensio list. The first dimension is model, the second is character
 # #' @export
 #
-# chapter2_fitDiscrete <- function (chapter2, models = c("ER","SYM","ARD","meristic"), ncores=NULL){
-#   DiscDat<-chapter2_drop_type(chapter2, keep="discrete")
+# phydo_fitDiscrete <- function (phydo, models = c("ER","SYM","ARD","meristic"), ncores=NULL){
+#   DiscDat<-phydo_drop_type(phydo, keep="discrete")
 #   fitDiscreteResList <- list()
 #   for (model_index in seq_along(models)){
 #     for (char_index in sequence(ncol(DiscDat$data))) {

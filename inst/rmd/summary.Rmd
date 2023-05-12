@@ -1,5 +1,5 @@
 ---
-title: "Chapter2"
+title: "phydo"
 output:
   pdf_document:
     latex_engine: xelatex
@@ -8,7 +8,7 @@ params:
 ---
 
 ```{r, include=FALSE, echo=FALSE}
-all_results <- chapter2::run_chapter2(params$taxon)
+all_results <- phydo::run_phydo(params$taxon)
 ```
 
 # Taxon `r params$taxon`

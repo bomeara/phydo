@@ -1,9 +1,9 @@
-#' Do chapter2 analysis
+#' Do phydo analysis
 #'
 #' @param taxon Clade of interest
 #' @return A list with all output
 #' @export
-run_chapter2 <- function(taxon) {
+run_phydo <- function(taxon) {
   wikipedia_summary <- get_wikipedia_summary(taxon)
   wikipedia_pics <- get_wikipedia_pics(taxon)
   datelife_biggest <- get_datelife_biggest(taxon)
@@ -27,27 +27,27 @@ run_chapter2 <- function(taxon) {
 #' @return Nothing, though a file is created in the current working directory
 #' @export
 #' @examples
-#' render_chapter2("Tyto")
-render_chapter2 <- function(taxon, format="pdf", output_dir=getwd()) {
-  rmarkdown::render(system.file("rmd", "summary.Rmd", package="chapter2"), params=list(taxon=taxon),output_file=paste0("Report_",gsub(" ", "_",taxon), ".", format), output_dir=output_dir, encoding="UTF-8")
+#' render_phydo("Tyto")
+render_phydo <- function(taxon, format="pdf", output_dir=getwd()) {
+  rmarkdown::render(system.file("rmd", "summary.Rmd", package="phydo"), params=list(taxon=taxon),output_file=paste0("Report_",gsub(" ", "_",taxon), ".", format), output_dir=output_dir, encoding="UTF-8")
 }
 
 
 #' Create a file of results
 #'
-#' @param chapter2_result The result of run_chapter2
+#' @param phydo_result The result of run_phydo
 #' @param taxon Clade of interest
 #' @return Nothing, though a file is created in the current working directory
 #' @export
-render_quarto <- function(chapter2_result, taxon) {
-  #quarto::quarto_render(system.file( "summary.qmd", package="chapter2"), 
+render_quarto <- function(phydo_result, taxon) {
+  #quarto::quarto_render(system.file( "summary.qmd", package="phydo"), 
   quarto::quarto_render("test.qmd", 
 
 	output_file=paste0("Report_",gsub(" ", "_",taxon), ".html"),
 	execute_dir = tempdir(),
   	execute_params = list(
         taxon = taxon,
-        all_results = jsonlite::serializeJSON(chapter2_result)
+        all_results = jsonlite::serializeJSON(phydo_result)
     ))
 }
 
