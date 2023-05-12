@@ -1,6 +1,4 @@
-library(rgbif)
-library(plyr)
-library(png)
+
 
 #' Query gbif to return latitude and longitude for members of a clade of interest
 #'
