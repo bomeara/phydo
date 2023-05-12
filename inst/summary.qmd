@@ -1,5 +1,5 @@
 ---
-title: "PhyDo"
+title: "Chapter2"
 format:
   html
 embed-resources:
@@ -15,7 +15,6 @@ library(magrittr)
 library(tidyverse)
 library(htmlwidgets)
 library(formattable)
-library(leaflet)
 all_results <- jsonlite::unserializeJSON(params$all_results)
 ```
 
@@ -26,17 +25,6 @@ all_results <- jsonlite::unserializeJSON(params$all_results)
 ## Wikipedia summary
 
 `r all_results$wikipedia_summary`
-
-Here is an image from Wikipedia:
-
-<img src='`r all_results$wikipedia_pics[1]`' alt='Image of `r params$taxon` from Wikipedia'>
-
-## Traits from Encylopedia of Life
-
-```{r, echo=FALSE}
- traits <- chapter2:::eol_traits2(all_results$eol)
- datatable(traits, rownames=FALSE)
-```
 
 
 ## OpenTree
@@ -84,17 +72,6 @@ if(nrow(pubmed.df)>0) {
 }
 ```
 
-## Map
-
-```{r, echo=FALSE}
-	location_info <- all_results$location_realm_biome$locations
-	#location_info$lat <- location_info$latitude
-	#location_info$lng <- location_info$longitude
-	m = leaflet(location_info) %>% addTiles() %>% addProviderTiles(providers$Stamen.Terrain)
-	m %>% addMarkers(
-  		clusterOptions = markerClusterOptions()
-	)	
-```
 
 ## Realm
 
@@ -119,12 +96,9 @@ for (i in sequence(nrow(biome))) {
 }
 biome <- round(100*biome,1)
 
-
 myForm <- function(x) {
 	color_tile("white", "orange")
 }
 biome_df <- data.frame(biome)
-colnames(biome_df) <- gsub("\\.", " ", (gsub('\\.\\.', ', ', gsub('\\.\\.\\.', " and ", colnames(biome_df)))))
-
 formattable(biome_df, lapply(biome_df, myForm))
 ```
