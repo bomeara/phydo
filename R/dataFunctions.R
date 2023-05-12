@@ -7,9 +7,6 @@
 #' @param gbif_limit Maximum number of records to return (hard limit is 200000)
 #' @return A data frame (tibble) of key, scientific name, decimal latitude, and decimal longitude
 #' @export
-
-
-
 gbif_taxon_query <- function (query, rank=NULL, gbif_limit=200000){
   key <- rgbif::name_suggest(q=query, rank=rank)$key[1]
   dat <- rgbif::occ_search(taxonKey=key, fields="minimal", limit=gbif_limit)
@@ -25,7 +22,6 @@ gbif_taxon_query <- function (query, rank=NULL, gbif_limit=200000){
 #' @param gbif_limit Maximum number of records to return (hard limit is 200000)
 #' @return A data frame (tibble) of key, scientific name, decimal latitude, and decimal longitude
 #' @export
-
 gbif_species_query <- function (species, gbif_limit=200000){
   all.records <- data.frame()
   for (species_index in seq_along(species)) {
