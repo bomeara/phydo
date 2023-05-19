@@ -51,7 +51,7 @@ spocc_taxon_query <- function(taxon, limit=10000, sources=c("gbif", "inat", "idi
   all.taxa <- c(taxon)
   if(by_species) {
     for (taxon_index in seq_along(taxon)) {
-      all.taxa <- c(all.taxa,descendant_species(taxon[taxon_index]))
+      all.taxa <- c(all.taxa,get_descendant_species(taxon[taxon_index]))
     }
   } else {
     all.taxa <- taxon
@@ -69,6 +69,12 @@ spocc_taxon_query <- function(taxon, limit=10000, sources=c("gbif", "inat", "idi
   all.records$longitude <- as.numeric(all.records$longitude)
   all.records$latitude <- as.numeric(all.records$latitude)
   return(all.records)
+}
+
+get_all_species_only_from_datelife <- function(taxon) {
+  all_species <- unname(datelife::get_all_species(taxon)$tnrs_names)
+  all_species <- all_species[which(!grepl("_.+_", all_species))]
+  return(all_species)
 }
 
 #' Clean locality information
@@ -195,12 +201,13 @@ aggregate_category <- function(locations, focal='realm', group_by = "taxon", ret
 
 #' Get all descendant species of the taxon
 #'
-#' Uses taxize, datelife, and sources of GBIF, Catalogue of Life, and OpenTree. Note it can only get up to 1000 names currently
+#' Uses taxize, datelife, and sources of GBIF and OpenTree
 #'
 #' @param taxon Clade of interest
+#' @param strict Logical; if TRUE, only return species that are binomials (no subspecies).
 #' @return vector of species names
 #' @export
-descendant_species <- function(taxon) {
+get_descendant_species <- function(taxon, strict=TRUE) {
   species <- c()
   #col_id <- taxize::gnr_resolve(taxon, data_source_ids=1, ask=FALSE, fields="all", best_match_only=TRUE)
 
@@ -209,9 +216,10 @@ descendant_species <- function(taxon) {
 
   try(gbif_id <- taxize::get_gbifid_(taxon)[[1]]$usagekey[1], silent=TRUE)
   try(species <- taxize::downstream(gbif_id, downto = "species", db = "gbif", limit=1000)[[1]]$name, silent=TRUE)
-  try(species <- c(species, rownames(datelife::get_ott_children(input=taxon)[[1]])), silent=TRUE)
+  try(species <- c(species, unname(datelife::get_all_descendant_species(taxon, strict=strict)$tnrs_names)), silent=TRUE)
   #try(col_id <- taxize::get_colid_(taxon)[[1]]$id[1])
   #try(species <- c(species,taxize::downstream(col_id, downto = "species", db = "col")[[1]]$childtaxa_name))
+  try(species <- gsub("_", " ", species))
   try(species <- unique(species))
   return(species)
 }
@@ -327,6 +335,7 @@ get_genbank_count <- function(taxon) {
 #' @param taxon The clade of interest
 #' @param focal.genes Vector of gene names
 #' @return vector of counts by gene, with label being the given gene name
+#' @export
 #' @examples
 #' get_genbank_count_by_gene("Myrmecocystus")
 get_genbank_count_by_gene <- function(taxon, focal.genes=c("COI", "18S", "28S", "matk", "rbcl")) {
@@ -391,10 +400,24 @@ get_location_realm_biome <- function(taxon, limit=10000) {
 #' @export
 get_datelife_biggest <- function(taxon) {
   clade.name<- rotl::tnrs_match_names(taxon)$unique_name[1]
+  all_species <- datelife::get_all_descendant_species(clade.name, strict=FALSE)
   datelife_biggest <- NULL
-  try(datelife_biggest <- datelife::datelife_search(input=clade.name, get_spp_from_taxon=TRUE, summary_format="phylo_biggest"))
+  try(datelife_biggest <- datelife::datelife_search(input=unname(all_species$tnrs_names), get_spp_from_taxon=FALSE, summary_format="phylo_biggest"))
   
   return(datelife_biggest)
+}
+
+#' Get all tree from datelife
+#'
+#' @param taxon Clade of interest
+#' @return phylo object
+#' @export
+get_datelife_all <- function(taxon) {
+  clade.name<- rotl::tnrs_match_names(taxon)$unique_name[1]
+  all_species <- datelife::get_all_descendant_species(clade.name, strict=FALSE)
+  datelife_all <- NULL
+  try(datelife_biggest <- datelife::datelife_search(input=unname(all_species$tnrs_names), get_spp_from_taxon=FALSE, summary_format="phylo_all"))
+  return(datelife_all)
 }
 
 #' Get Wikipedia summary
@@ -470,7 +493,7 @@ get_combie_image_summary <- function(taxon){
 #' @examples
 #' info <- get_eol("Gallus")
 get_eol <- function(taxon) {
-  descendants <- descendant_species(taxon)
+  descendants <- get_descendant_species(taxon)
   all_df <- data.frame()
   for (taxon_index in seq_along(descendants)) {
 	  local_df <- data.frame()
