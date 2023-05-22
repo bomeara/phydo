@@ -86,7 +86,7 @@ run_misse <- function(phy, species=NULL) {
 		sampling_fraction <- ape::Ntip(phy)/length(species)
 	}
 	try({
-		misse_results <- hisse::MiSSEGreedy(phy, f=sampling_fraction, generateMiSSEGreedyCombinations(max.param=max(3, min(52,ceiling(ape::Ntip(phy)/10))), fixed.eps=c(NA, 0, 0.9)))
+		misse_results <- hisse::MiSSEGreedy(phy, f=sampling_fraction, hisse::generateMiSSEGreedyCombinations(max.param=max(3, min(52,ceiling(ape::Ntip(phy)/10))), fixed.eps=c(NA, 0, 0.9)))
 	}, silent=TRUE)
 	return(misse_results)
 }

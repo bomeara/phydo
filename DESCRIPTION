@@ -23,6 +23,7 @@ Imports:
 	magrittr,
     paleotree,
     phangorn,
+	phylobase,
     plyr,
 	png,
 	raster,

@@ -200,3 +200,28 @@ phydo_fitGeiger <- function(phydo, models=NULL, keep=c("continuous", "discrete")
 #   }
 #   return(fitDiscreteResList)
 # }
+
+#' Root a tree
+#' 
+#' From Jeremy Beaulieu, slight mods from Brian O'Meara
+#' @param tree a phylo object
+#' @return A rooted tree
+#' @export
+reroot.tree <- function(tree){
+	tree <- phytools::bind.tip(tree, tip.label="outgroup", where=ape::Ntip(tree)+1)
+	p<-root(tree,outgroup="outgroup",resolve.root=TRUE)
+	bb <- which(p$tip.label=="outgroup")
+	if(is.null(p$edge.length)) {
+		p$edge.length <- rep(0, length(p$edge[,1]))
+	}
+	ee <- p$edge.length[which(p$edge[,2]==bb)]
+	p$edge.length[which(p$edge[,2]==bb)] <- 0
+	cc <- p$edge[which(p$edge[,2]==bb),1]
+	dd <- setdiff(p$edge[which(p$edge[,1]==cc),2],bb)
+
+	p$edge.length[which(p$edge[,2]==dd)]<-p$edge.length[which(p$edge[,2]==dd)]+(ee/2)
+	p$edge.length[which(p$edge[,2]==bb)] <- (ee/2)
+	#p <- ape::drop.tip(p, "outgroup", trim.internal=FALSE)
+	#p <- ladderize(p)
+	return(p)
+}

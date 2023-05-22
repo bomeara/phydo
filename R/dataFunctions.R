@@ -366,9 +366,9 @@ get_genbank_count_by_gene <- function(taxon, focal.genes=c("COI", "18S", "28S", 
 
 get_pubmed <- function(taxon, search.string=' AND phylogeny',retmax=50) {
   clade.name<- rotl::tnrs_match_names(taxon)$unique_name[1]
-  pubmed.query <- paste0(clade.name, search.string)
+  pubmed.query <- paste0(clade.name, "[TIAB] ", search.string)
   pubmed.result <- rentrez::entrez_search(db="pubmed", pubmed.query, use_history=TRUE, retmax=retmax)
-  if(length(pubmed.result$id)>0) {
+  if(length(pubmed.result$id)>0 & !is.na(clade.name)) {
     pubmed.summaries <- rentrez::entrez_summary(db="pubmed", id=pubmed.result$id)
     pubmed.df <- data.frame(Date=rentrez::extract_from_esummary(pubmed.summaries, elements=c("sortpubdate")), FirstAuthor=rentrez::extract_from_esummary(pubmed.summaries, elements=c("sortfirstauthor")), Journal=rentrez::extract_from_esummary(pubmed.summaries, elements=c("fulljournalname")), Title=rentrez::extract_from_esummary(pubmed.summaries, elements=c("title")), row.names=NULL)
   } else {
@@ -376,6 +376,29 @@ get_pubmed <- function(taxon, search.string=' AND phylogeny',retmax=50) {
     pubmed.df <- data.frame(Date=NA, FirstAuthor=NA, Journal=NA, Title=NA, row.names=NULL)
   }
   return(list(count=pubmed.result$count,   recent.papers =   pubmed.df ))
+}
+
+#' Get information on the count of papers from pubmed
+#'
+#' This will give the total number of pubmed articles mentioning the taxon name and other search string and information on the most recent such papers.
+#'
+#' @param taxon The clade of interest
+#' @param search.string Include spaces and AND and similar search elements
+#' @return List with a count element (integer) and a recent.papers element (data.frame)
+#' @export
+#' @examples
+#' taxon <- "Formicidae"
+#' results <- get_pubmed_count_only(taxon)
+#' print(paste("There are", results, "papers on", taxon, "and phylogeny"))
+
+get_pubmed_count_only <- function(taxon, search.string=' AND phylogeny') {
+  clade.name<- rotl::tnrs_match_names(taxon)$unique_name[1]
+  if(is.na(clade.name)) {
+	return(0)
+  }
+  pubmed.query <- paste0(clade.name, "[TIAB] ", search.string)
+  pubmed.result <- rentrez::entrez_search(db="pubmed", pubmed.query, use_history=TRUE)
+  return(pubmed.result$count)
 }
 
 #' Get location, realm, and biome
@@ -507,4 +530,85 @@ get_eol <- function(taxon) {
 	  }
   }
   return(all_df)
+}
+
+#' Aggregate pubmed data down OToLtree
+#' 
+#' @param taxon The clade to investigate
+#' @param ignore_subspecies Should subspecies be ignored?
+#' @return List with tree and information about nodes and tips
+#' @export
+#' @examples
+#' taxon <- "Pinaceae"
+#' info <- get_pubmed_info_on_OTOL(taxon)
+get_pubmed_info_on_OTOL <- function(taxon, ignore_subspecies=TRUE) {
+	resolved_name <- rotl::tnrs_match_names(taxon)
+	focal_tree <- rotl::tol_subtree(ott_id = resolved_name$ott_id, label_format="name")
+	focal_tree <- reroot.tree(focal_tree)
+	all_species <- focal_tree$tip.label
+	if(ignore_subspecies) {
+		bad_taxa <- all_species[which(grepl("_.+_", all_species))]
+		if(length(bad_taxa)>0) {
+			focal_tree <- ape::drop.tip(focal_tree, bad_taxa)
+		}
+
+	}
+	focal_tree <- reorder(focal_tree, order="postorder")
+	focal_df <- as(as(focal_tree, "phylo4d"), "data.frame")
+	focal_df$PubmedThisLevel <- NA
+	for (i in sequence(nrow(focal_df))) {
+		if (!is.na(focal_df$label[i])) {
+			focal_df$PubmedThisLevel[i] <- get_pubmed_count_only(focal_df$label[i], search.string="")
+			print(paste0("Found ", focal_df$PubmedThisLevel[i], " papers for ", focal_df$label[i]))
+		}
+	}
+	
+	focal_df$PubmedDescendantTipsOnlyLowerBound <- 0
+	focal_df$PubmedDescendantTipsOrInternalLowerBound <- 0
+	for (i in sequence(nrow(focal_df))) {
+		
+		if (focal_df$node.type[i]=="internal") {
+			descendant_tips <- focal_df$node[which(focal_df$ancestor==focal_df$node[i])]
+			focal_df$PubmedDescendantTipsOnlyLowerBound[i] <- max(focal_df$PubmedThisLevel[which(focal_df$node %in% descendant_tips)], na.rm=TRUE)
+			if(!is.finite(focal_df$PubmedDescendantTipsOnlyLowerBound[i])) {
+				focal_df$PubmedDescendantTipsOnlyLowerBound[i] <- 0
+			}
+			focal_df$PubmedDescendantTipsOrInternalLowerBound[i] <- max(c(focal_df$PubmedDescendantTipsOnlyLowerBound[i], focal_df$PubmedThisLevel[i]), na.rm=TRUE)
+			
+		}
+	}
+	return(list(tree=focal_tree, info=focal_df))
+}
+
+
+#' Plot pubmed data down OToLtree
+#' 
+#' This will use reconstruction of number of papers down a tree
+#' @param pubmed_info_on_OTOL List with tree and information about nodes and tips, from get_pubmed_info_on_OTOL
+#' @return Plot
+#' @export
+plot_pubmed_info_on_OTOL <- function(pubmed_info_on_OTOL) {
+	p4d <- phylo4d(pubmed_info_on_OTOL$tree, all.data=pubmed_info_on_OTOL$info)	
+	traits <- p4d@data
+	traits <- subset(traits, node.type=="tip")
+	rownames(traits) <- traits$label
+	combined <- geiger::treedata(pubmed_info_on_OTOL$tree, traits)
+	combined_data <- as.data.frame(combined$data)
+	combined_data$PubmedThisLevel <- as.numeric(combined_data$PubmedThisLevel)
+	combined_data$Log1pPubmedThisLevel <- log1p(combined_data$PubmedThisLevel)
+	Log1pPubmedThisLevel <- combined_data$Log1pPubmedThisLevel
+	names(Log1pPubmedThisLevel) <- combined_data$label
+	PubmedThisLevel <- combined_data$PubmedThisLevel
+	names(PubmedThisLevel) <- combined_data$label
+	combined_tree <- ape::multi2di(combined$phy)
+	combined_tree <- ape::compute.brlen(combined_tree)
+	contmap_obj <- phytools::contMap(combined_tree, PubmedThisLevel, plot=FALSE)
+	contmap_obj_viridis <- setMap(contmap_obj, c("gray", rev(viridis::viridis(100))))
+	plot(
+		contmap_obj_viridis, 
+		type="fan", 
+		legend = 0.7*max(nodeHeights(combined_tree)),
+		fsize = c(0.5, 0.7)
+	)
+
 }
