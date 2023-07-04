@@ -3,13 +3,21 @@
 #' Query gbif to return latitude and longitude for members of a clade of interest
 #'
 #' @param query name of the clade of interest
-#' @param rank the clade's rank (e.g. "genus")
-#' @param gbif_limit Maximum number of records to return (hard limit is 200000)
 #' @return A data frame (tibble) of key, scientific name, decimal latitude, and decimal longitude
 #' @export
-gbif_taxon_query <- function (query, rank=NULL, gbif_limit=200000){
-  key <- rgbif::name_suggest(q=query, rank=rank)$key[1]
-  dat <- rgbif::occ_search(taxonKey=key, fields="minimal", limit=gbif_limit)
+gbif_taxon_query <- function (query){
+  key <- rgbif::name_backbone(q=query)
+  gbif_download <- rgbif::occ_download(
+	pred('taxonKey', unname(key[1,'usageKey'])),
+	pred("hasGeospatialIssue", FALSE),
+	pred("hasCoordinate", TRUE),
+	pred_or(
+    	pred_not(pred_in("establishmentMeans",c("MANAGED","INTRODUCED"))),
+    	pred_isnull("establishmentMeans")
+    )
+  )
+  occ_download_wait(gbif_download)
+  dat <- occ_download_get(gbif_download, path=tempdir()) %>% occ_download_import()
   return(dat)
 }
 
@@ -536,12 +544,13 @@ get_eol <- function(taxon) {
 #' 
 #' @param taxon The clade to investigate
 #' @param ignore_subspecies Should subspecies be ignored?
+#' @param just_genera Should only genera be used?
 #' @return List with tree and information about nodes and tips
 #' @export
 #' @examples
 #' taxon <- "Pinaceae"
 #' info <- get_pubmed_info_on_OTOL(taxon)
-get_pubmed_info_on_OTOL <- function(taxon, ignore_subspecies=TRUE) {
+get_pubmed_info_on_OTOL <- function(taxon, ignore_subspecies=TRUE, just_genera=FALSE) {
 	resolved_name <- rotl::tnrs_match_names(taxon)
 	focal_tree <- rotl::tol_subtree(ott_id = resolved_name$ott_id, label_format="name")
 	focal_tree <- reroot.tree(focal_tree)
@@ -552,6 +561,9 @@ get_pubmed_info_on_OTOL <- function(taxon, ignore_subspecies=TRUE) {
 			focal_tree <- ape::drop.tip(focal_tree, bad_taxa)
 		}
 
+	}
+	if (just_genera) {
+		focal_tree <- pruneToGenera(focal_tree)	
 	}
 	focal_tree <- reorder(focal_tree, order="postorder")
 	focal_df <- as(as(focal_tree, "phylo4d"), "data.frame")

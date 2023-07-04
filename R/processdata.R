@@ -225,3 +225,14 @@ reroot.tree <- function(tree){
 	#p <- ladderize(p)
 	return(p)
 }
+
+
+# Using function from http://blog.phytools.org/2014/11/pruning-trees-to-one-member-per-genus.html
+pruneToGenera <- function(tree) {
+	tips<-tree$tip.label
+	genera<-unique(sapply(strsplit(tips,"_"),function(x) x[1]))
+	ii<-sapply(genera,function(x,y) grep(x,y)[1],y=tips)
+	tree<-drop.tip(tree,setdiff(tree$tip.label,tips[ii]))
+	tree$tip.label<-sapply(strsplit(tree$tip.label,"_"),function(x) x[1])
+	return(tree)
+}

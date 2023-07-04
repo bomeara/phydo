@@ -4,12 +4,14 @@
 \alias{get_pubmed_info_on_OTOL}
 \title{Aggregate pubmed data down OToLtree}
 \usage{
-get_pubmed_info_on_OTOL(taxon, ignore_subspecies = TRUE)
+get_pubmed_info_on_OTOL(taxon, ignore_subspecies = TRUE, just_genera = FALSE)
 }
 \arguments{
 \item{taxon}{The clade to investigate}
 
 \item{ignore_subspecies}{Should subspecies be ignored?}
+
+\item{just_genera}{Should only genera be used?}
 }
 \value{
 List with tree and information about nodes and tips
