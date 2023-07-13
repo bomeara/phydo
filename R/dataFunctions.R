@@ -6,18 +6,18 @@
 #' @return A data frame (tibble) of key, scientific name, decimal latitude, and decimal longitude
 #' @export
 gbif_taxon_query <- function (query){
-  key <- rgbif::name_backbone(q=query)
+  key <- rgbif::name_backbone(query)
   gbif_download <- rgbif::occ_download(
-	pred('taxonKey', unname(key[1,'usageKey'])),
-	pred("hasGeospatialIssue", FALSE),
-	pred("hasCoordinate", TRUE),
-	pred_or(
-    	pred_not(pred_in("establishmentMeans",c("MANAGED","INTRODUCED"))),
-    	pred_isnull("establishmentMeans")
+	rgbif::pred('taxonKey', unname(key[1,'usageKey'])),
+	rgbif::pred("hasGeospatialIssue", FALSE),
+	rgbif::pred("hasCoordinate", TRUE),
+	rgbif::pred_or(
+    	rgbif::pred_not(rgbif::pred_in("establishmentMeans",c("MANAGED","INTRODUCED"))),
+    	rgbif::pred_isnull("establishmentMeans")
     )
   )
-  occ_download_wait(gbif_download)
-  dat <- occ_download_get(gbif_download, path=tempdir()) %>% occ_download_import()
+  rgbif::occ_download_wait(gbif_download)
+  dat <- rgbif::occ_download_get(gbif_download, path=tempdir()) %>% rgbif::occ_download_import()
   return(dat)
 }
 

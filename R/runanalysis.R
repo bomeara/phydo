@@ -4,7 +4,7 @@
 #' @return A list with all output
 #' @export
 run_phydo <- function(taxon) {
-	wikipedia_summary <- wikipedia_pics <- datelife_biggest <- all_species <- misse_results <- pubmed_all <- genbank_count_by_gene <- genbank_count <- otol <- eol <- eol_tbl <- location_realm_biome <- NULL # very stupid way to initialize
+	wikipedia_summary <- wikipedia_pics <- datelife_biggest <- all_species <- misse_results <- pubmed_all <- genbank_count_by_gene <- genbank_count <- otol <- eol <- eol_tbl <- location_realm_biome <- gbif <- NULL # very stupid way to initialize
   try(wikipedia_summary <- get_wikipedia_summary(taxon))
   try(wikipedia_pics <- get_wikipedia_pics(taxon))
   try(datelife_biggest <- get_datelife_biggest(taxon))
@@ -15,10 +15,11 @@ run_phydo <- function(taxon) {
   try(genbank_count <- get_genbank_count(taxon))
   try(otol <- get_otol(taxon))
   try(eol <- get_eol(taxon))
+  try(gbif <- gbif_taxon_query(taxon))
   #eol_tbl <- eol_traits2(eol)
-  try(location_realm_biome <- get_location_realm_biome(taxon))
+ # try(location_realm_biome <- get_location_realm_biome(taxon))
   #return(list(wikipedia_summary=wikipedia_summary, datelife_biggest=datelife_biggest, pubmed=pubmed, genbank_count_by_gene=genbank_count_by_gene, genbank_count=genbank_count , otol=otol, location_realm_biome=location_realm_biome, eol=eol, eol_tbl=eol_tbl))
-  return(list(wikipedia_summary=wikipedia_summary, wikipedia_pics=wikipedia_pics, datelife_biggest=datelife_biggest, all_species=all_species, misse_results=misse_results, genbank_count_by_gene=genbank_count_by_gene, genbank_count=genbank_count, otol=otol, eol=eol))
+  return(list(wikipedia_summary=wikipedia_summary, wikipedia_pics=wikipedia_pics, datelife_biggest=datelife_biggest, all_species=all_species, misse_results=misse_results, genbank_count_by_gene=genbank_count_by_gene, genbank_count=genbank_count, pubmed_all=pubmed_all, otol=otol, eol=eol, gbif=gbif))
 
 }
 
