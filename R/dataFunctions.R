@@ -142,8 +142,21 @@ plot_gis <- function(gbif_points) {
 	return(base_map)
 }
 
-
 #' Use azizka/speciesgeocodeR/ and WWF data to encode locations for habitat and biome
+WWFload <- function(x = NULL) {
+    if (missing(x)) {
+        x <- getwd()
+    }
+    download.file("http://assets.worldwildlife.org/publications/15/files/original/official_teow.zip", 
+        destfile = file.path(x, "wwf_ecoregions.zip"))
+    unzip(file.path(x, "wwf_ecoregions.zip"), exdir = file.path(x, "WWF_ecoregions"))
+    file.remove(file.path(x, "wwf_ecoregions.zip"))
+    wwf <- maptools::readShapeSpatial(file.path(x, "WWF_ecoregions", "official", 
+        "wwf_terr_ecos.shp"))
+    return(wwf)
+}
+
+
 #'
 #' Uses info from http://omap.africanmarineatlas.org/BIOSPHERE/data/note_areas_sp/Ecoregions_Ecosystems/WWF_Ecoregions/WWFecoregions.htm to convert codes to more readable text
 #'
@@ -157,7 +170,7 @@ plot_gis <- function(gbif_points) {
 #' print(head(locations))
 locality_add_habitat_biome <- function(locations) {
   locations.spatial <- sp::SpatialPointsDataFrame(coords=locations[,c("longitude", "latitude")], data=locations)
-  wwf <- speciesgeocodeR::WWFload(tempdir())
+  wwf <- WWFload(tempdir())
   mappedregions <- sp::over(locations.spatial, wwf)
   realms <- data.frame(code=c("AA", "AN", "AT", "IM", "NA", "NT", "OC", "PA"), realm=c("Australasia", "Antarctic", "Afrotropics", "IndoMalay", "Nearctic", "Neotropics", "Oceania", "Palearctic"), stringsAsFactors=FALSE)
   biomes <- c("Tropical & Subtropical Moist Broadleaf Forests", "Tropical & Subtropical Dry Broadleaf Forests", "Tropical & Subtropical Coniferous Forests", "Temperate Broadleaf & Mixed Forests", "Temperate Conifer Forests", "Boreal Forests/Taiga", "Tropical & Subtropical Grasslands, Savannas & Shrubland", "Temperate Grasslands, Savannas & Shrublands", "Flooded Grasslands & Savannas", "Montane Grasslands & Shrublands", "Tundra", "Mediterranean Forests, Woodlands & Scrub", "Deserts & Xeric Shrublands", "Mangroves")
@@ -212,7 +225,6 @@ aggregate_category <- function(locations, focal='realm', group_by = "taxon", ret
 #' Uses taxize, datelife, and sources of GBIF and OpenTree
 #'
 #' @param taxon Clade of interest
-#' @param strict Logical; if TRUE, only return species that are binomials (no subspecies).
 #' @return vector of species names
 #' @export
 get_descendant_species <- function(taxon, strict=TRUE) {
@@ -224,7 +236,7 @@ get_descendant_species <- function(taxon, strict=TRUE) {
 
   try(gbif_id <- taxize::get_gbifid_(taxon)[[1]]$usagekey[1], silent=TRUE)
   try(species <- taxize::downstream(gbif_id, downto = "species", db = "gbif", limit=1000)[[1]]$name, silent=TRUE)
-  try(species <- c(species, unname(datelife::get_all_descendant_species(taxon, strict=strict)$tnrs_names)), silent=TRUE)
+  try(species <- c(species, unname(datelife::get_all_descendant_species(taxon)$tnrs_names)), silent=TRUE)
   #try(col_id <- taxize::get_colid_(taxon)[[1]]$id[1])
   #try(species <- c(species,taxize::downstream(col_id, downto = "species", db = "col")[[1]]$childtaxa_name))
   try(species <- gsub("_", " ", species))
@@ -431,7 +443,7 @@ get_location_realm_biome <- function(taxon, limit=10000) {
 #' @export
 get_datelife_biggest <- function(taxon) {
   clade.name<- rotl::tnrs_match_names(taxon)$unique_name[1]
-  all_species <- datelife::get_all_descendant_species(clade.name, strict=FALSE)
+  all_species <- datelife::get_all_descendant_species(clade.name)
   datelife_biggest <- NULL
   try(datelife_biggest <- datelife::datelife_search(input=unname(all_species$tnrs_names), get_spp_from_taxon=FALSE, summary_format="phylo_biggest"))
   
@@ -445,7 +457,7 @@ get_datelife_biggest <- function(taxon) {
 #' @export
 get_datelife_all <- function(taxon) {
   clade.name<- rotl::tnrs_match_names(taxon)$unique_name[1]
-  all_species <- datelife::get_all_descendant_species(clade.name, strict=FALSE)
+  all_species <- datelife::get_all_descendant_species(clade.name)
   datelife_all <- NULL
   try(datelife_biggest <- datelife::datelife_search(input=unname(all_species$tnrs_names), get_spp_from_taxon=FALSE, summary_format="phylo_all"))
   return(datelife_all)
