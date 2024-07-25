@@ -90,8 +90,8 @@ if(nrow(pubmed.df)>0) {
 	location_info <- all_results$location_realm_biome$locations
 	#location_info$lat <- location_info$latitude
 	#location_info$lng <- location_info$longitude
-	m = leaflet(location_info) %>% addTiles() %>% addProviderTiles(providers$Stamen.Terrain)
-	m %>% addMarkers(
+	m = leaflet(location_info) |> addTiles() |> addProviderTiles(providers$Stamen.Terrain)
+	m |> addMarkers(
   		clusterOptions = markerClusterOptions()
 	)	
 ```

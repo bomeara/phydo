@@ -64,7 +64,7 @@ eol_traits <- function(eol_df){
   #remove duplicate rows
   clean_df <- dplyr::distinct(df2, .keep_all = TRUE)
   #collapse values into a single cell
-  group_df <- clean_df %>% dplyr::select(species, trait, value) %>% dplyr::group_by(trait) %>% dplyr::mutate(Grp = paste0(value, collapse = ";")) %>% dplyr::distinct(species, trait, Grp, .keep_all = FALSE)
+  group_df <- clean_df |> dplyr::select(species, trait, value) |> dplyr::group_by(trait) |> dplyr::mutate(Grp = paste0(value, collapse = ";")) |> dplyr::distinct(species, trait, Grp, .keep_all = FALSE)
   #pivot df so that each trait is a column
   wider_df <- tidyr::pivot_wider(group_df, names_from = trait, values_from = Grp)
   return(wider_df)
@@ -87,7 +87,7 @@ eol_traits2 <- function(eol_df){
 	#add a group by trait
 	group_df2 <- dplyr::group_by(group_df, trait, .add = TRUE)
  	# create a new column with the values of each trait for each species in a single cell separated by a semicolon
- 	newcol_df <- dplyr::mutate(group_df2, Grp = paste0(value, collapse = ";"))
+ 	newcol_df <- dplyr::mutate(group_df2, Grp = paste0(sort(unique(value)), collapse = "; "))
  	# keep the rows that are unique
  	distinct_df <- dplyr::distinct(newcol_df, species, trait, Grp, .keep_all = FALSE)
  	# pivot the df so that each trait is a column

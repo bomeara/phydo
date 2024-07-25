@@ -17,7 +17,7 @@ gbif_taxon_query <- function (query){
     )
   )
   rgbif::occ_download_wait(gbif_download)
-  dat <- rgbif::occ_download_get(gbif_download, path=tempdir()) %>% rgbif::occ_download_import()
+  dat <- rgbif::occ_download_get(gbif_download, path=tempdir()) |> rgbif::occ_download_import()
   return(dat)
 }
 
@@ -92,8 +92,11 @@ get_all_species_only_from_datelife <- function(taxon) {
 #' @return Cleaned data.frame
 #' @export
 locality_clean <- function(locations) {
-  locations <- CoordinateCleaner::cc_val(locations, lon="longitude", lat="latitude", value="clean")
-  return(CoordinateCleaner::clean_coordinates(locations, lon="longitude", lat="latitude", species=NULL, tests=c( "centroids", "equal", "gbif", "institutions","zeros"), value="clean"))
+  locations <- CoordinateCleaner::cc_val(locations, lon="decimalLongitude", lat="decimalLatitude", value="clean")
+  locations <- CoordinateCleaner::clean_coordinates(locations, lon="decimalLongitude", lat="decimalLatitude", species=NULL, tests=c( "centroids", "equal", "gbif", "institutions","zeros"), value="clean")
+  locations$longitude <- locations$decimalLongitude
+  locations$latitude <- locations$decimalLatitude
+  return(locations)
 }
 
 #' Plot a map of points
@@ -124,8 +127,8 @@ plot_gis <- function(gbif_points) {
 	elev_med <- elevatr::get_elev_raster(med_bbox_df, prj =  prj_dd, z = 3, clip = "bbox")
 	elev_med_mat <- rayshader::raster_to_matrix(elev_med)
 
-	base_map <- elev_med_mat %>% 
-	height_shade() %>% 
+	base_map <- elev_med_mat |> 
+	height_shade() |> 
 	add_overlay(
 		sphere_shade(elev_med_mat,
 					texture = rayshader::create_texture(
@@ -138,11 +141,14 @@ plot_gis <- function(gbif_points) {
 					colorintensity = 5)
 	)
 
-	base_map %>% plot_map()
+	base_map |> plot_map()
 	return(base_map)
 }
 
 #' Use azizka/speciesgeocodeR/ and WWF data to encode locations for habitat and biome
+#' @param x Data.frame containing points (latitude and longitude, perhaps other data as columns)
+#' @return data.frame with columns for habitat and biome.
+#' @export
 WWFload <- function(x = NULL) {
     if (missing(x)) {
         x <- getwd()
@@ -151,10 +157,13 @@ WWFload <- function(x = NULL) {
         destfile = file.path(x, "wwf_ecoregions.zip"))
     unzip(file.path(x, "wwf_ecoregions.zip"), exdir = file.path(x, "WWF_ecoregions"))
     file.remove(file.path(x, "wwf_ecoregions.zip"))
-    wwf <- maptools::readShapeSpatial(file.path(x, "WWF_ecoregions", "official", 
+    wwf <- sf::st_read(file.path(x, "WWF_ecoregions", "official", 
         "wwf_terr_ecos.shp"))
     return(wwf)
 }
+
+
+
 
 
 #'
@@ -169,16 +178,20 @@ WWFload <- function(x = NULL) {
 #' locations <- locality_add_habitat_biome(locations)
 #' print(head(locations))
 locality_add_habitat_biome <- function(locations) {
-  locations.spatial <- sp::SpatialPointsDataFrame(coords=locations[,c("longitude", "latitude")], data=locations)
+  locations_spatial <- sf::st_as_sf(locations, coords=c("decimalLongitude", "decimalLatitude"), crs=4326)
+
   wwf <- WWFload(tempdir())
-  mappedregions <- sp::over(locations.spatial, wwf)
+  sf::sf_use_s2(FALSE)
+  wwf_flat<- sf::st_transform(wwf, 4326)
+  mappedregions <- sapply(sf::st_intersects(locations_spatial,wwf_flat), function(z) if (length(z)==0) NA_integer_ else z[1])
+
   realms <- data.frame(code=c("AA", "AN", "AT", "IM", "NA", "NT", "OC", "PA"), realm=c("Australasia", "Antarctic", "Afrotropics", "IndoMalay", "Nearctic", "Neotropics", "Oceania", "Palearctic"), stringsAsFactors=FALSE)
   biomes <- c("Tropical & Subtropical Moist Broadleaf Forests", "Tropical & Subtropical Dry Broadleaf Forests", "Tropical & Subtropical Coniferous Forests", "Temperate Broadleaf & Mixed Forests", "Temperate Conifer Forests", "Boreal Forests/Taiga", "Tropical & Subtropical Grasslands, Savannas & Shrubland", "Temperate Grasslands, Savannas & Shrublands", "Flooded Grasslands & Savannas", "Montane Grasslands & Shrublands", "Tundra", "Mediterranean Forests, Woodlands & Scrub", "Deserts & Xeric Shrublands", "Mangroves")
-  locations$eco_name <- mappedregions$ECO_NAME
-  locations$biome <- biomes[mappedregions$BIOME]
-  locations$realm <- NA
-  for (i in sequence(nrow(locations))) {
-    locations$realm[i] <- realms$realm[which(realms$code==mappedregions$REALM)]
+  locations$eco_name <- wwf$ECO_NAM[mappedregions]
+  locations$biome <- biomes[wwf$BIOME[mappedregions]]
+  locations$realm <- wwf$REALM[mappedregions]
+  for(realm_index in seq_along(realms$code)) {
+	locations$realm <- gsub(realms$code[realm_index], realms$realm[realm_index], locations$realm)
   }
   return(locations)
 }
@@ -423,17 +436,15 @@ get_pubmed_count_only <- function(taxon, search.string=' AND phylogeny') {
 
 #' Get location, realm, and biome
 #'
-#' @param taxon Clade of interest
-#' @param limit Maximum number of points per species per source
+#' @param gbif_record Data from GBIF
 #' @return list containing a data.frame of species and locations, a table of realms (biogeographic regions), and a table of biomes
 #' @export
-get_location_realm_biome <- function(taxon, limit=10000) {
-  locations <- spocc_taxon_query(taxon, limit=limit)
-  locations <- locality_clean(locations)
+get_location_realm_biome <- function(gbif_record) {
+  locations <- locality_clean(gbif_record)
   locations <- locality_add_habitat_biome(locations)
-  biome <- aggregate_category(locations, focal="biome", group_by="taxon")
-  realm <- aggregate_category(locations, focal="realm", group_by="taxon")
-  return(list(locations=locations, realm=realm, biome=biome))
+  #biome <- aggregate_category(locations, focal="biome", group_by="taxon")
+  #realm <- aggregate_category(locations, focal="realm", group_by="taxon")
+  return(locations)
 }
 
 #' Get biggest tree from datelife
@@ -548,6 +559,9 @@ get_eol <- function(taxon) {
 	  } else {
 		 print(paste0("Found 0 EOL datapoints for ", descendants[taxon_index]))  
 	  }
+  }
+  for (col_index in sequence(ncol(all_df))) {
+	  all_df[,col_index] <- stringr::str_trim(all_df[,col_index])
   }
   return(all_df)
 }

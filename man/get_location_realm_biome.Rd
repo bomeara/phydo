@@ -4,12 +4,10 @@
 \alias{get_location_realm_biome}
 \title{Get location, realm, and biome}
 \usage{
-get_location_realm_biome(taxon, limit = 10000)
+get_location_realm_biome(gbif_record)
 }
 \arguments{
-\item{taxon}{Clade of interest}
-
-\item{limit}{Maximum number of points per species per source}
+\item{gbif_record}{Data from GBIF}
 }
 \value{
 list containing a data.frame of species and locations, a table of realms (biogeographic regions), and a table of biomes

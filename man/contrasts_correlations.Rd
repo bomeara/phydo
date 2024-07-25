@@ -9,7 +9,7 @@ contrasts_correlations(phy, traits)
 \arguments{
 \item{phy}{A phylo object}
 
-\item{traits}{A data.frame of traits, with taxon names as rownames}
+\item{traits}{A data.frame of traits with first column as species}
 }
 \value{
 A list with three objects: the correlations, lower, and upper.

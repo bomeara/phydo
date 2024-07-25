@@ -8,8 +8,6 @@ get_descendant_species(taxon, strict = TRUE)
 }
 \arguments{
 \item{taxon}{Clade of interest}
-
-\item{strict}{Logical; if TRUE, only return species that are binomials (no subspecies).}
 }
 \value{
 vector of species names

@@ -2,7 +2,7 @@
 % Please edit documentation in R/dataFunctions.R
 \name{locality_add_habitat_biome}
 \alias{locality_add_habitat_biome}
-\title{Use azizka/speciesgeocodeR/ and WWF data to encode locations for habitat and biome}
+\title{Uses info from http://omap.africanmarineatlas.org/BIOSPHERE/data/note_areas_sp/Ecoregions_Ecosystems/WWF_Ecoregions/WWFecoregions.htm to convert codes to more readable text}
 \usage{
 locality_add_habitat_biome(locations)
 }
