@@ -4,12 +4,14 @@
 \alias{run_corHMM}
 \title{Run a corHMM analysis}
 \usage{
-run_corHMM(phy, trait_data)
+run_corHMM(phy, trait_data, ncores)
 }
 \arguments{
 \item{phy}{A phylo object}
 
 \item{trait_data}{A data.frame with species in the first column and traits in the rest}
+
+\item{ncores}{Number of cores to use}
 }
 \value{
 A list with the results of the corHMM analysis

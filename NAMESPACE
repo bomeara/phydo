@@ -2,7 +2,9 @@
 
 export(WWFload)
 export(aggregate_category)
+export(aggregate_phydo_traits)
 export(check_continuous)
+export(construct_phydo_targets)
 export(contrasts_correlations)
 export(convert_continuous_to_discrete)
 export(eol_data)

@@ -4,7 +4,7 @@
 \alias{run_misse}
 \title{Run misse analysis}
 \usage{
-run_misse(phy, species = NULL)
+run_misse(phy, species = NULL, ncores = 1)
 }
 \arguments{
 \item{phy}{The phylo object}

@@ -1,3 +1,85 @@
+# devtools::document(); devtools::install(); library(targets); library(phydo); tresult <- construct_phydo_targets("Crambidae", ncores=3)
+
+#' Do phydo analysis with targets
+#' 
+#' @param taxon Clade of interest
+#' @param ncores Number of cores to use
+#' @return Nothing, though a file is created in the current working directory
+#' @export
+construct_phydo_targets <- function(taxon, ncores=1) {
+  
+	
+	cat("library(targets)\nlibrary(phydo)\n", file="_targets.R", append=FALSE)
+	cat('
+	taxon <- "', taxon, '"\n', file="_targets.R", append=TRUE)
+	cat('
+		list(
+		tar_target_raw(name="input_taxon", 
+			command = rlang::enexpr(taxon)
+		),
+		tar_target_raw("wikipedia_summary", {
+			quote(phydo::get_wikipedia_summary(input_taxon))
+		})
+		,
+		tar_target(wikipedia_pics, {
+			phydo::get_wikipedia_pics(input_taxon)
+		}),
+		tar_target(datelife_biggest, {
+			phydo::get_datelife_biggest(input_taxon)
+		}),
+		tar_target(all_species, {
+			phydo::get_descendant_species(input_taxon)
+		}),
+		tar_target(pubmed_all, {
+			phydo::get_pubmed(input_taxon, search.string="")
+		}),
+		tar_target(genbank_count_by_gene, {
+			phydo::get_genbank_count_by_gene(input_taxon)
+		}),
+		tar_target(genbank_count, {
+			phydo::get_genbank_count(input_taxon)
+		}),
+		tar_target(eol, {
+			phydo::get_eol(input_taxon)
+		}),
+		tar_target(eol_tbl, {
+			phydo::eol_traits2(eol)
+		}),
+		tar_target(gbif, {
+			phydo::gbif_taxon_query(input_taxon)
+		}),
+		tar_target(location_realm_biome, {
+			phydo::get_location_realm_biome(gbif)
+		}),
+		tar_target(phydo_data, {
+			phydo::aggregate_phydo_traits(location_realm_biome, eol_tbl)
+		}),
+		tar_target(qualitative_data, {
+			phydo_data$all_traits_qualitative
+		}),
+		tar_target(numeric_data, {
+			phydo_data$all_traits_numeric
+		}),
+		tar_target(misse_results, {
+			command = phydo::run_misse(datelife_biggest, all_species, ncores=', ncores, ')
+		}),
+		tar_target(corhmm_results, {
+			command = phydo::run_corHMM(datelife_biggest, qualitative_data, ncores=', ncores, ')
+		}),
+		tar_target(best_corhmm, {
+			command = phydo::get_best_corhmm(corhmm_results)
+		}),
+		tar_target(contrasts_correlations, {
+			command = phydo::contrasts_correlations(datelife_biggest, numeric_data)
+		})
+	)'
+	
+		, file="_targets.R", append=TRUE)
+	tar_make()
+	return(taxon)
+}
+
+
 #' Do phydo analysis
 #'
 #' @param taxon Clade of interest
@@ -47,8 +129,14 @@ remove_nchar_zero <- function(x) {
   x[!nchar(x)==0]
 }
 
-aggregate_phydo_traits <- function(phydo_data) {
-	location_aggregated <- phydo_data$location_realm_biome |> dplyr::group_by(species) |> 
+#' Aggregate phydo traits
+#' 	
+#' @param location_realm_biome data frame with locations
+#' @param eol_tbl A data frame with species in the first column and traits in the rest
+#' @return A list with two data frames: one with qualitative traits and one with numeric traits
+#' @export
+aggregate_phydo_traits <- function(location_realm_biome, eol_tbl) {
+	location_aggregated <- location_realm_biome |> dplyr::group_by(species) |> 
 		dplyr::summarize(
 			realm=paste(sort(unique(remove_nchar_zero(realm))), collapse="; "), 
 			biome=paste(sort(unique(remove_nchar_zero(biome))), collapse="; "),
@@ -67,7 +155,7 @@ aggregate_phydo_traits <- function(phydo_data) {
 			min_025_lon=quantile(decimalLongitude, 0.025, na.rm=TRUE),
 			min_025_elevation=quantile(elevation, 0.025, na.rm=TRUE)
 		)
-	all_traits <- dplyr::full_join(phydo_data$eol_tbl, location_aggregated, by="species")
+	all_traits <- dplyr::full_join(eol_tbl, location_aggregated, by="species")
 	all_traits <- as.data.frame(subset(all_traits, nchar(species)>0))
 	all_traits_continuous <- as.data.frame(apply(all_traits, 2, as.numeric))
 	all_traits_continuous$species <- all_traits$species
@@ -82,10 +170,9 @@ aggregate_phydo_traits <- function(phydo_data) {
 	}
 	all_traits_qualitative <- all_traits[,c(1,qualitative_traits)]
 	all_traits_numeric <- all_traits_continuous[,c(1,numeric_traits)]
-	phydo_data$all_traits_qualitative <- all_traits_qualitative
-	phydo_data$all_traits_numeric <- all_traits_numeric
 	
-	return(phydo_data)
+	
+	return(list(all_traits_qualitative=all_traits_qualitative, all_traits_numeric=all_traits_numeric))
 }
 
 
@@ -144,7 +231,7 @@ run_biogeobears <- function(phy, locations) {
 #' @param species A vector of species names in the clade, NOT just on the tree.
 #' @return A list with class misse.fits objects
 #' @export
-run_misse <- function(phy, species=NULL) {
+run_misse <- function(phy, species=NULL, ncores=1) {
 	if(!inherits(phy, "phylo")) {
 		return(NULL)
 	}
@@ -155,7 +242,7 @@ run_misse <- function(phy, species=NULL) {
 	}
 	try({
 		#misse_results <- hisse::MiSSEGreedy(phy, f=sampling_fraction, hisse::generateMiSSEGreedyCombinations(max.param=max(3, min(52,ceiling(ape::Ntip(phy)/10))), fixed.eps=c(NA, 0, 0.9)))
-		misse_results <- hisse::MiSSEGreedy(phy, f=sampling_fraction, hisse::generateMiSSEGreedyCombinations(max.param=52, turnover.tries=sequence(5), eps.tries=sequence(5), fixed.eps=c(NA, 0, 0.9)))
+		misse_results <- hisse::MiSSEGreedy(phy, f=sampling_fraction, hisse::generateMiSSEGreedyCombinations(max.param=52, turnover.tries=sequence(5), eps.tries=sequence(5), fixed.eps=c(NA, 0, 0.9)), n.cores=ncores)
 	}, silent=TRUE)
 	return(misse_results)
 }
@@ -169,6 +256,9 @@ run_misse <- function(phy, species=NULL) {
 #' @return A list with three objects: the correlations, lower, and upper.
 #' @export
 contrasts_correlations <- function(phy, traits) {
+	if(!inherits(phy, "phylo")) {
+		return(NULL)
+	}
 	rownames(traits) <- traits[,1]
 	traits <- traits[,-1]
   correlations <- matrix(NA, ncol=ncol(traits), nrow=ncol(traits))
@@ -219,9 +309,10 @@ reconstruct_apomorphy <- function(phy, data, apomorphy) {
 #' 
 #' @param phy A phylo object
 #' @param trait_data A data.frame with species in the first column and traits in the rest
+#' @param ncores Number of cores to use
 #' @return A list with the results of the corHMM analysis
 #' @export
-run_corHMM <- function(phy, trait_data) {
+run_corHMM <- function(phy, trait_data, ncores) {
 	nchar <- ncol(trait_data)-1
 	all_results <- list()
 	if(!inherits(phy, "phylo")) {
@@ -258,7 +349,7 @@ run_corHMM <- function(phy, trait_data) {
 					try({
 						chosen_rate.cat <- run_combinations[model_index,1]
 						chosen_model <- run_combinations[model_index,2]
-						model_result <- corHMM::corHMM(phy_focal, transformed_data, model=chosen_model, rate.cat=chosen_rate.cat, get.tip.states=TRUE)
+						model_result <- corHMM::corHMM(phy_focal, transformed_data, model=chosen_model, rate.cat=chosen_rate.cat, get.tip.states=TRUE, n.cores=ncores)
 						model_result$chosen_model <- chosen_model
 						model_result$global_states <- global_states
 						model_result$character_index <- i
